@@ -1,0 +1,22 @@
+[package]
+name = "cost-meter"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Aggregate LLM API cost across providers, models, and time windows. Provider-agnostic — pairs with claude-cost, openai-cost, gemini-cost, bedrock-cost. No SDK dependency."
+authors = ["Mukunda Rao Katta <mukunda.vjcs6@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/MukundaKatta/cost-meter"
+homepage = "https://github.com/MukundaKatta/cost-meter"
+documentation = "https://docs.rs/cost-meter"
+readme = "README.md"
+keywords = ["llm", "cost", "meter", "aggregate", "billing"]
+categories = ["data-structures"]
+exclude = [".github/*", "target/*"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
