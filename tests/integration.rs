@@ -1,6 +1,12 @@
 use cost_meter::{Call, Meter};
 
-fn call(provider: &'static str, model: &'static str, input: u64, output: u64, cost: f64) -> Call<'static> {
+fn call(
+    provider: &'static str,
+    model: &'static str,
+    input: u64,
+    output: u64,
+    cost: f64,
+) -> Call<'static> {
     Call {
         provider,
         model,
@@ -63,7 +69,11 @@ fn by_model_keeps_provider_distinction() {
     m.record(call("a", "shared", 0, 0, 1.0));
     m.record(call("b", "shared", 0, 0, 2.0));
     let v = m.by_model();
-    assert_eq!(v.len(), 2, "two providers should produce two model rows even with same model name");
+    assert_eq!(
+        v.len(),
+        2,
+        "two providers should produce two model rows even with same model name"
+    );
 }
 
 #[test]
@@ -73,4 +83,39 @@ fn reset_clears_everything() {
     m.reset();
     assert_eq!(m.snapshot().total_calls, 0);
     assert!(m.by_model().is_empty());
+}
+
+#[test]
+fn by_provider_keeps_per_model_token_sums() {
+    let mut m = Meter::new();
+    m.record(call("anthropic", "claude-sonnet-4-5", 1000, 500, 0.01));
+    m.record(call("anthropic", "claude-haiku-4-5", 100, 50, 0.001));
+    let anthropic = m
+        .by_provider()
+        .into_iter()
+        .find(|(p, _)| p == "anthropic")
+        .unwrap()
+        .1;
+    assert_eq!(anthropic.input_tokens, 1100);
+    assert_eq!(anthropic.output_tokens, 550);
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn snapshot_and_bucket_round_trip_through_json() {
+    use cost_meter::{Bucket, Snapshot};
+
+    let mut m = Meter::new();
+    m.record(call("anthropic", "claude-sonnet-4-5", 1000, 500, 0.0105));
+    m.record(call("anthropic", "claude-haiku-4-5", 100, 50, 0.001));
+
+    let snap = m.snapshot();
+    let snap_json = serde_json::to_string(&snap).unwrap();
+    let snap_back: Snapshot = serde_json::from_str(&snap_json).unwrap();
+    assert_eq!(snap, snap_back);
+
+    let bucket = m.by_provider().into_iter().next().unwrap().1;
+    let bucket_json = serde_json::to_string(&bucket).unwrap();
+    let bucket_back: Bucket = serde_json::from_str(&bucket_json).unwrap();
+    assert_eq!(bucket, bucket_back);
 }

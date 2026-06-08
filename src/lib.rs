@@ -148,8 +148,11 @@ impl Meter {
 
     /// Buckets grouped by (provider, model), sorted by cost desc.
     pub fn by_model(&self) -> Vec<((String, String), Bucket)> {
-        let mut v: Vec<((String, String), Bucket)> =
-            self.by_pm.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let mut v: Vec<((String, String), Bucket)> = self
+            .by_pm
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
         v.sort_by(|a, b| {
             b.1.cost_usd
                 .partial_cmp(&a.1.cost_usd)
